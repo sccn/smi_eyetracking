@@ -108,7 +108,7 @@ end
 
 
 
-function [EYETRACK,event] = read_events(file)
+function [EYETRACK,events] = read_events(file)
 
 % if no string was entered or if the file doesn't exist then output error
 if isempty(file) || ~isfile(file)
@@ -235,21 +235,15 @@ end
 
 eye_events = fieldnames(EYETRACK);
 events_fields = {'type','latency'};
-events_count = 0;
-event = struct;
+flag = 0;
 for i = 1:length(eye_events)
     if isstruct(EYETRACK.(eye_events{i}))
         temp = EYETRACK.(eye_events{i});
-        latency = {temp.Start}';
+        latency = {temp.End}';
         type = repmat({eye_events{i}}, length(EYETRACK.(eye_events{i})), 1);
-        data = horzcat(type,latency);
+        data = {type,latency};
         temp_events = cell2struct(data,events_fields,2);
-        events_count = events_count+1;
-        if events_count>1
-            event = [event; temp_events];
-        else
-            event = temp_events;
-        end
+        events = [events, temp_events];
         clear temp
         clear latency
         clear data
