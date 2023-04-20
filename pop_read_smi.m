@@ -10,14 +10,14 @@ EEG.data  = smi.dat;
 EEG.pnts  = size(smi.dat,2);
 EEG.nbchan = size(smi.dat,1);
 EEG.trials = 1;
-EEG.event = smi.event;
 EEG = eeg_checkset(EEG);
 
-% added the events - DEEPA, the events are in smi.event - DONE - Deepa
+% add the events - DEEPA, the events are in smi.event
 % place them in EEG.event according to the EEGLAB event format
 % conversion is necessary
 % https://eeglab.org/tutorials/ConceptsGuide/Data_Structures.html#eegevent
 
+% EEG.event = smi.event; % NO
 
 % 1. Create evetns for fixation
 % 2. Create evetns for sacaddes
