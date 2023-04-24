@@ -11,6 +11,7 @@ EEG.pnts  = size(smi.dat,2);
 EEG.nbchan = size(smi.dat,1);
 EEG.trials = 1;
 EEG = eeg_checkset(EEG);
+EEG.chanlocs = struct('labels', smi.label);
 
 % add the events - DEEPA, the events are in smi.event
 % place them in EEG.event according to the EEGLAB event format

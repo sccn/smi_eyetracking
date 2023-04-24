@@ -13,7 +13,7 @@ function smi = read_smi_txt_with_events(filename, fileevent)
 smi.header  = {};
 smi.label   = {};
 smi.dat     = [];
-if nargin > 1
+if nargin > 1 && ~isempty(fileevent)
     smi.event   = read_events(fileevent);
 else
     smi.event   = [];
@@ -32,61 +32,61 @@ aline(aline==uint8(sprintf('\r'))) = [];        % remove cariage return
 aline = tokenize(aline, uint8(sprintf('\n')));  % split on newline
 
 for i=1:numel(aline)
-  tline = aline{i};
-  
-  if numel(tline) && any(tline(1)=='0':'9') && ~contains(tline, 'Message')
-    % if regexp(tline, '^[0-9]')
-    tmp = regexp(tline,'[^\t\r\n\f\v]*','match')';
-    % exclude SMP sting
-    smp = regexp(tmp','SMP');
-    smpidx = find(cellfun(@numel,smp)==1);
-    
-    current = current + 1;
-    smi.type{1,current} =  sscanf(tmp{smpidx}, '%s');
-    tmp(smpidx,:) = [];
-    
-    for j=1:size(tmp,1)
-      val = sscanf(tmp{j,1}, '%f');
-      if isempty(val)
-        smi.dat(j,current) =  NaN;
-      else
-        smi.dat(j,current) =  val;
-      end
+    tline = aline{i};
+
+    if numel(tline) && any(tline(1)=='0':'9') && ~contains(tline, 'Message')
+        % if regexp(tline, '^[0-9]')
+        tmp = regexp(tline,'[^\t\r\n\f\v]*','match')';
+        % exclude SMP sting
+        smp = regexp(tmp','SMP');
+        smpidx = find(cellfun(@numel,smp)==1);
+
+        current = current + 1;
+        smi.type{1,current} =  sscanf(tmp{smpidx}, '%s');
+        tmp(smpidx,:) = [];
+
+        for j=1:size(tmp,1)
+            val = sscanf(tmp{j,1}, '%f');
+            if isempty(val)
+                smi.dat(j,current) =  NaN;
+            else
+                smi.dat(j,current) =  val;
+            end
+        end
+
+    elseif regexp(tline, '##')
+        smi.header = cat(1, smi.header, {tline});
+
+        template ='## Sample Rate:';
+        if strncmp(tline,template,length(template))
+            smi.Fs = cellfun(@str2num,regexp(tline,'[\d]+','match'));
+        end
+
+        template = '## Number of Samples:';
+        if strncmp(tline,template,length(template))
+            smi.nsmp = cellfun(@str2num,regexp(tline,'[\d]+','match'));
+        end
+
+        template = '## Head Distance [mm]:';
+        if strncmp(tline,template,length(template))
+            smi.headdist = cellfun(@str2num,regexp(tline,'[\d]+','match'));
+        end
+
+    elseif regexp(tline, 'Time*')
+        smi.label = cat(1, smi.label, {tline});
+        smi.label = regexp(smi.label{:},'[^\t\r\n\f\v]*','match')';
+        typeln = regexp(smi.label','Type');
+        typeidx = find(cellfun(@numel,typeln)==1);
+
+        % delete Type column because only contains strings
+        smi.label(typeidx,:) = [];
+        % preamble data matrix
+        smi.dat = zeros(size(smi.label,1),smi.nsmp);
+
+    else
+        % all other lines are not parsed
     end
-    
-  elseif regexp(tline, '##')
-    smi.header = cat(1, smi.header, {tline});
-    
-    template ='## Sample Rate:';
-    if strncmp(tline,template,length(template))
-      smi.Fs = cellfun(@str2num,regexp(tline,'[\d]+','match'));
-    end
-    
-    template = '## Number of Samples:';
-    if strncmp(tline,template,length(template))
-      smi.nsmp = cellfun(@str2num,regexp(tline,'[\d]+','match'));
-    end
-    
-    template = '## Head Distance [mm]:';
-    if strncmp(tline,template,length(template))
-      smi.headdist = cellfun(@str2num,regexp(tline,'[\d]+','match'));
-    end
-    	    
-  elseif regexp(tline, 'Time*')
-    smi.label = cat(1, smi.label, {tline});
-    smi.label = regexp(smi.label{:},'[^\t\r\n\f\v]*','match')';
-    typeln = regexp(smi.label','Type');
-    typeidx = find(cellfun(@numel,typeln)==1);
-    
-    % delete Type column because only contains strings
-    smi.label(typeidx,:) = [];
-    % preamble data matrix
-    smi.dat = zeros(size(smi.label,1),smi.nsmp);
-    
-  else
-    % all other lines are not parsed
-  end
-  
+
 end
 
 % remove the samples that were not filled with real data
@@ -95,9 +95,9 @@ end
 % place the timestamp channel outside of the data
 c = find(strcmp(smi.label, 'Time'));
 if numel(c)==1
-  smi.timestamp = smi.dat(c,:);
-  smi.dat(c,:) = [];
-  smi.label(c) = [];
+    smi.timestamp = smi.dat(c,:);
+    smi.dat(c,:) = [];
+    smi.label(c) = [];
 end
 
 
@@ -125,7 +125,7 @@ try
 catch ME
     fprintf(ME.message);
     read_flag = 1;
-%     return
+    %     return
 end
 
 if read_flag == 1
@@ -153,51 +153,51 @@ event_values = {};
 eye_srate = 0;
 
 while (i < size(file_scan,1))
-    
+
     % extract and store sampling rate of the eye tracking raw data
-   if contains(file_scan(i,1).(1){1},"Sample Rate:")
-       eye_srate = split(file_scan(i,1).(1){1},"Sample Rate:");
-       eye_srate = str2num(eye_srate{2});
-       
-    % extract event types and its headers from the eye tracking raw data
-   elseif contains(file_scan(i,1).(1){1},"Table Header for ")
-       event_type{j} = strrep(extractAfter(file_scan(i,1).(1){1},"Table Header for "),':','');
-       i = i+1;
-       temp = split(file_scan(i,1).(1){1},'  ');
-       emptyCells = cellfun(@isempty,temp);
-       temp(emptyCells) = [];       
-       event_features{j} = temp;
-       clear temp
-       clear emptyCells
-       j = j+1;
-       
-    % extract values from the eye tracking raw file   
-   elseif eye_srate>0 && any(regexp(file_scan(i,1).(1){1},'[0-9]'))
-       if ~init_features 
-           event_type = strrep(event_type,' ',''); %remove spaces
-           for k = 1:size(event_features,2)
-               event_features{k} = strrep(event_features{k},' ','');
-           end
-           %initialize event values storage for each feature
-           event_values = cell(size(event_type));
-           init_features = 1;
-       else
-           temp = split(file_scan(i,1).(1){1},'  ');
-           emptyCells = cellfun(@isempty,temp);
-           temp(emptyCells) = [];
-           clear emptyCells
-           % check which event description's values are retrieved and store
-           % the obtained values for that event
-           value_type = split(temp{1},' ');
-           index = contains(event_type,value_type{1});
-           clear value_type
-           index = find(index,1);
-%            event_values{index}{end+1,1} = temp'; % <- issue, dont bother
-           event_values{end+1,index} = temp'; 
-           clear temp
-       end
-   end
-   i = i+1;
+    if contains(file_scan(i,1).(1){1},"Sample Rate:")
+        eye_srate = split(file_scan(i,1).(1){1},"Sample Rate:");
+        eye_srate = str2num(eye_srate{2});
+
+        % extract event types and its headers from the eye tracking raw data
+    elseif contains(file_scan(i,1).(1){1},"Table Header for ")
+        event_type{j} = strrep(extractAfter(file_scan(i,1).(1){1},"Table Header for "),':','');
+        i = i+1;
+        temp = split(file_scan(i,1).(1){1},'  ');
+        emptyCells = cellfun(@isempty,temp);
+        temp(emptyCells) = [];
+        event_features{j} = temp;
+        clear temp
+        clear emptyCells
+        j = j+1;
+
+        % extract values from the eye tracking raw file
+    elseif eye_srate>0 && any(regexp(file_scan(i,1).(1){1},'[0-9]'))
+        if ~init_features
+            event_type = strrep(event_type,' ',''); %remove spaces
+            for k = 1:size(event_features,2)
+                event_features{k} = strrep(event_features{k},' ','');
+            end
+            %initialize event values storage for each feature
+            event_values = cell(size(event_type));
+            init_features = 1;
+        else
+            temp = split(file_scan(i,1).(1){1},'  ');
+            emptyCells = cellfun(@isempty,temp);
+            temp(emptyCells) = [];
+            clear emptyCells
+            % check which event description's values are retrieved and store
+            % the obtained values for that event
+            value_type = split(temp{1},' ');
+            index = contains(event_type,value_type{1});
+            clear value_type
+            index = find(index,1);
+            %            event_values{index}{end+1,1} = temp'; % <- issue, dont bother
+            event_values{end+1,index} = temp';
+            clear temp
+        end
+    end
+    i = i+1;
 end
 
 EYETRACK = [];
@@ -222,15 +222,15 @@ EYETRACK.duration =  EYETRACK.xmax - EYETRACK.xmin;
 EYETRACK.sample_step = EYETRACK.duration/EEG_timeperiod; % 1ms equivalent
 
 for i = 1:size(EYETRACK.Fixations,1)
-    EYETRACK.Fixations(i).Startms = (str2num(EYETRACK.Fixations(i).Start) - EYETRACK.xmin )/EYETRACK.sample_step; 
-    EYETRACK.Fixations(i).Endtms = (str2num(EYETRACK.Fixations(i).End) - EYETRACK.xmin )/EYETRACK.sample_step; 
+    EYETRACK.Fixations(i).Startms = (str2num(EYETRACK.Fixations(i).Start) - EYETRACK.xmin )/EYETRACK.sample_step;
+    EYETRACK.Fixations(i).Endtms = (str2num(EYETRACK.Fixations(i).End) - EYETRACK.xmin )/EYETRACK.sample_step;
 end
 for i = 1:size(EYETRACK.Saccades,1)
-    EYETRACK.Saccades(i).Startms = (str2num(EYETRACK.Saccades(i).Start) - EYETRACK.xmin )/EYETRACK.sample_step; 
-    EYETRACK.Saccades(i).Endms = (str2num(EYETRACK.Saccades(i).End) - EYETRACK.xmin )/EYETRACK.sample_step; 
+    EYETRACK.Saccades(i).Startms = (str2num(EYETRACK.Saccades(i).Start) - EYETRACK.xmin )/EYETRACK.sample_step;
+    EYETRACK.Saccades(i).Endms = (str2num(EYETRACK.Saccades(i).End) - EYETRACK.xmin )/EYETRACK.sample_step;
 end
 for i = 1:size(EYETRACK.Blinks,1)
-    EYETRACK.Blinks(i).Startms = (str2num(EYETRACK.Blinks(i).Start) - EYETRACK.xmin )/EYETRACK.sample_step; 
-    EYETRACK.Blinks(i).Endms = (str2num(EYETRACK.Blinks(i).End) - EYETRACK.xmin )/EYETRACK.sample_step; 
+    EYETRACK.Blinks(i).Startms = (str2num(EYETRACK.Blinks(i).Start) - EYETRACK.xmin )/EYETRACK.sample_step;
+    EYETRACK.Blinks(i).Endms = (str2num(EYETRACK.Blinks(i).End) - EYETRACK.xmin )/EYETRACK.sample_step;
 end
 
