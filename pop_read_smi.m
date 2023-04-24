@@ -17,6 +17,21 @@ EEG = eeg_checkset(EEG);
 % conversion is necessary
 % https://eeglab.org/tutorials/ConceptsGuide/Data_Structures.html#eegevent
 
+timeInc = median(diff(smi.timestamp));
+realSampleRate = 1000000/timeInc;
+firstSampleLat = smi.timestamp(1);
+if abs(realSampleRate-smi.Fs) > 1
+    fprintf(2,'Issue with sample rate, file says %1.2f, sample say %1.2f\n', smi.Fs, realSampleRate)
+end
+
+if isfield(smi, 'event')
+    EEG.event = smi.event;
+    for iEvent = 1:length(EEG.event)
+        EEG.event(iEvent).latency_ori = EEG.event(iEvent).latency;
+        EEG.event(iEvent).latency     = (EEG.event(iEvent).latency-firstSampleLat)/timeInc;
+    end        
+end
+
 % EEG.event = smi.event; % NO
 
 % 1. Create evetns for fixation
