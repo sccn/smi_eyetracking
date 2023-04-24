@@ -240,8 +240,15 @@ event = struct;
 for i = 1:length(eye_events)
     if isstruct(EYETRACK.(eye_events{i}))
         temp = EYETRACK.(eye_events{i});
-        latency = {temp.Start}';
-        type = repmat({eye_events{i}}, length(EYETRACK.(eye_events{i})), 1);
+        latency = {(temp.Start)}';
+        % convert timestamp of string type to numeric value
+        latency = cellfun(@str2num,latency,'un',0); 
+        % if event type is plural, make it singular for the event structure
+        if eye_events{i}(end) == 's'
+            type = repmat({eye_events{i}(1:end-1)}, length(EYETRACK.(eye_events{i})), 1);
+        else
+            type = repmat({eye_events{i}}, length(EYETRACK.(eye_events{i})), 1);
+        end
         data = horzcat(type,latency);
         temp_events = cell2struct(data,events_fields,2);
         events_count = events_count+1;
