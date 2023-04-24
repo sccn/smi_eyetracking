@@ -28,7 +28,7 @@ if isfield(smi, 'event')
     EEG.event = smi.event;
     for iEvent = 1:length(EEG.event)
         EEG.event(iEvent).latency_ori = EEG.event(iEvent).latency;
-        EEG.event(iEvent).latency     = (EEG.event(iEvent).latency-firstSampleLat)/timeInc;
+        EEG.event(iEvent).latency     = (EEG.event(iEvent).latency-firstSampleLat)/timeInc+1;
     end        
 end
 
