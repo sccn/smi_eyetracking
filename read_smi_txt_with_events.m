@@ -102,8 +102,9 @@ end
 
 
 
-function [eye_srate,event] = read_events(event_file)
 
+
+function [eye_srate,event] = read_events(event_file)
 
 fid = fopen(event_file, 'r');
 fopen(fid);
