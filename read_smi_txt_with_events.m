@@ -13,7 +13,7 @@ function smi = read_smi_txt_with_events(filename, fileevent)
 smi.header  = {};
 smi.label   = {};
 smi.dat     = [];
-if nargin > 1
+if nargin > 1 && ~isempty(fileevent)
     [smi.EYETRACK,smi.event]   = read_events(fileevent);
 else
     smi.event   = [];

@@ -1,5 +1,13 @@
 function EEG = pop_read_smi(filedata, fileevent)
 
+if nargin < 2 || isempty(fileevent)
+    fileevent = [ filedata(1:end-11) 'Events.txt' ];
+    tmp = dir(fileevent);
+    if isempty(tmp)
+        fileevent = [];
+    end
+end
+
 smi = read_smi_txt_with_events(filedata, fileevent);
 
 % convert SMI to EEG structure including events
@@ -10,6 +18,7 @@ EEG.data  = smi.dat;
 EEG.pnts  = size(smi.dat,2);
 EEG.nbchan = size(smi.dat,1);
 EEG.trials = 1;
+EEG.chanlocs = struct('labels', smi.label);
 EEG = eeg_checkset(EEG);
 
 % add the events - DEEPA, the events are in smi.event
