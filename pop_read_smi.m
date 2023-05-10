@@ -38,28 +38,8 @@ if isfield(smi, 'event')
     for iEvent = 1:length(EEG.event)
         EEG.event(iEvent).latency_ori = EEG.event(iEvent).latency;
         EEG.event(iEvent).latency     = (EEG.event(iEvent).latency-firstSampleLat)/timeInc+1;
+        if ~isempty(EEG.event(iEvent).description) && contains(EEG.event(iEvent).description, '# Message: ')
+            EEG.event(iEvent).description = EEG.event(iEvent).description(12:end);
+        end
     end        
 end
-
-% EEG.event = smi.event; % NO
-
-% 1. Create evetns for fixation
-% 2. Create evetns for sacaddes
-% 3. Create evetns for blinks
-% 4. Create evetns for userevents
-
-% make sure the latency is in sample, with respect to the ebeigning of the
-% data
-% 
-% ****************
-% Fixation Event: search for the position of '2882391240' in the first
-% column of the sample file. The one below would be below latency equals 7 samples
-% ****************
-%
-%   struct with fields:
-% 
-%         EventType: 'Fixation L'
-%             Trial: '1'
-%            Number: '1'
-%             Start: '2882391240'
-%               End: '2882541195'
