@@ -35,7 +35,7 @@
 
 function vers = eegplugin_smi_eyetracking(fig, trystrs, catchstrs)
 
-    vers = '0.1';
+    vers = '1';
     if nargin < 3
         error('eegplugin_ctfimport requires 3 arguments');
     end;

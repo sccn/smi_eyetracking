@@ -43,3 +43,4 @@ if isfield(smi, 'event')
         end
     end        
 end
+EEG = eeg_checkset(EEG, 'eventconsistency');

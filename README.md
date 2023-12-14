@@ -6,4 +6,4 @@ Events are formated EEGLAB styles
 
 # Revisions
 
-v0.1 - Import data, events not formated
+v1 - First version
